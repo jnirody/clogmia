@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import re, math, sys, os, random
 import numpy as np
 import pylab as pl
@@ -14,6 +16,7 @@ import scipy
 from scipy.stats import linregress
 from scipy.optimize import curve_fit
 from scipy import stats
+from toolz import interleave
 
 # This makes Figure 5a
 
@@ -24,8 +27,10 @@ def func(x, a, b, c):
 
 condition = 'sandpaper'
 
-upperdir = '/'.join(os.getcwd().split('/')[:-1])
-files = glob.glob(upperdir + '/Data/ForAnalysis/' + condition + '/' + 'compiled*.csv')
+#upperdir = '/'.join(os.getcwd().split('/')[:-1])
+upperdir = '/home/eebrandt/projects/UChicago/fly_walking/sandpaper/data/processed_data/'
+files = glob.glob(upperdir + '/' + 'compiled*.csv')
+
 alldata = {}
 loc_legs_speed = {}
 loc_legs_step = {}
@@ -33,96 +38,135 @@ loc_legs_swing = {}
 loc_legs_stance = {}
 loc_legs_period = {}
 loc_legs_pullback = {}
+trial_data = pd.DataFrame()
+
 
 for file in files:
     treatment = file.split('/')[-1].split('_')[-1][:-4]
     alldata[treatment] = pd.read_csv(file)
+    #print(alldata)
 treatments = ['glass','g150','g100','g60','g24']
 
 count = -1
 for treatment in alldata:
-# Look at how each leg pair correlates with speed
-    count += 1
-    first_leg_speed = list(map(float,alldata[treatment]['R1_stride_speed'].tolist()))
-    first_leg_speed.extend(list(map(float,alldata[treatment]['L1_stride_speed'].tolist())))
-    second_leg_speed = list(map(float,alldata[treatment]['R2_stride_speed'].tolist()))
-    second_leg_speed.extend(list(map(float,alldata[treatment]['L2_stride_speed'].tolist())))
-    third_leg_speed = list(map(float,alldata[treatment]['R3_stride_speed'].tolist()))
-    third_leg_speed.extend(list(map(float,alldata[treatment]['L3_stride_speed'].tolist())))
+	print(treatment)
+     # Look at how each leg pair correlates with speed
+     #trial_data = alldata[treatment][['fly', 'limb_length']]
+	#fly = pd.DataFrame(interleave([alldata[treatment]['fly'], alldata[treatment]['fly'], alldata[treatment]['fly'], alldata[treatment]['fly'], alldata[treatment]['fly'], alldata[treatment]['fly']]))
+	#print(len(fly))
+	#trtmnt = pd.DataFrame(interleave([alldata[treatment]['treatment'], alldata[treatment]['treatment'], alldata[treatment]['treatment'], alldata[treatment]['treatment'], alldata[treatment]['treatment'], alldata[treatment]['treatment']]))
+	#trial = pd.DataFrame(interleave([alldata[treatment]['trial'], alldata[treatment]['trial'], alldata[treatment]['trial'], alldata[treatment]['trial'], alldata[treatment]['trial'], alldata[treatment]['trial']]))
+	#trialdata = pd.concat([fly, trtmnt, trial], axis = 1)
+	#print(trialdata)
+	#trial_data = pd.concat([trial_data, trialdata], axis = 0)
+	#print(trial_data) 
+	
+	count += 1
+	first_leg_speed = list(map(float,alldata[treatment]['R1_stride_speed'].tolist()))
+	first_leg_speed.extend(list(map(float,alldata[treatment]['L1_stride_speed'].tolist())))
+	second_leg_speed = list(map(float,alldata[treatment]['R2_stride_speed'].tolist()))
+	second_leg_speed.extend(list(map(float,alldata[treatment]['L2_stride_speed'].tolist())))
+	third_leg_speed = list(map(float,alldata[treatment]['R3_stride_speed'].tolist()))
+	third_leg_speed.extend(list(map(float,alldata[treatment]['L3_stride_speed'].tolist())))
+	#print(len(first_leg_speed))
 
-    loc_legs_speed[treatment] = first_leg_speed + second_leg_speed + third_leg_speed
-    #print(np.mean(loc_legs_speed2),np.std(loc_legs_speed2))
-    
-    first_pullback = list(map(float,alldata[treatment]['R1_pull_back'].tolist()))
-    first_pullback.extend(list(map(float,alldata[treatment]['L1_pull_back'].tolist())))
-    idx1 = (np.array(first_pullback) > 0) & (np.array(first_leg_speed) > 2)
+	#trial_data.extend(list(alldata[treatment][['fly','limb_length']].tolist()))
 
-    second_pullback = list(map(float,alldata[treatment]['R2_pull_back'].tolist()))
-    second_pullback.extend(list(map(float,alldata[treatment]['L2_pull_back'].tolist())))
-    idx2 = (np.array(second_pullback) > 0) & (np.array(second_leg_speed) > 2)
+	
+	#print(trial_data)
+	
+	loc_legs_speed[treatment] = first_leg_speed + second_leg_speed + third_leg_speed
+	#print(np.mean(loc_legs_speed2),np.std(loc_legs_speed2))
+	
+	first_pullback = list(map(float,alldata[treatment]['R1_pull_back'].tolist()))
+	first_pullback.extend(list(map(float,alldata[treatment]['L1_pull_back'].tolist())))
+	idx1 = (np.array(first_pullback) > 0) & (np.array(first_leg_speed) > 2)
+	
+	second_pullback = list(map(float,alldata[treatment]['R2_pull_back'].tolist()))
+	second_pullback.extend(list(map(float,alldata[treatment]['L2_pull_back'].tolist())))
+	idx2 = (np.array(second_pullback) > 0) & (np.array(second_leg_speed) > 2)
+	
+	third_pullback = list(map(float,alldata[treatment]['R3_pull_back'].tolist()))
+	third_pullback.extend(list(map(float,alldata[treatment]['L3_pull_back'].tolist())))
+	idx3 = (np.array(third_pullback) > 0) & (np.array(third_leg_speed) > 2)
+	
+	loc_legs_pullback[treatment] = first_pullback + second_pullback + third_pullback
+	
+	first_step = list(map(float,alldata[treatment]['R1_step_length'].tolist()))
+	first_step.extend(list(map(float,alldata[treatment]['L1_step_length'].tolist())))
+	idx1 = (np.array(first_step) > 0)
+	second_step = list(map(float,alldata[treatment]['R2_step_length'].tolist()))
+	second_step.extend(list(map(float,alldata[treatment]['L2_step_length'].tolist())))
+	idx2 = (np.array(second_step) > 0)
+	
+	third_step = list(map(float,alldata[treatment]['R3_step_length'].tolist()))
+	third_step.extend(list(map(float,alldata[treatment]['L3_step_length'].tolist())))
+	idx3 = (np.array(third_step) > 0)
+	
+	loc_legs_step[treatment] = first_step + second_step + third_step
+	
+	first_period = list(map(float,alldata[treatment]['R1_period'].tolist()))
+	PR1 = alldata[treatment]['R1_period']
+	first_period.extend(list(map(float,alldata[treatment]['L1_period'].tolist())))
+	idx1 = (np.array(first_period) > 0) & (np.array(first_leg_speed) > 1)
+	
+	second_period = list(map(float,alldata[treatment]['R2_period'].tolist()))
+	PR2 = alldata[treatment]['R2_period']
+	second_period.extend(list(map(float,alldata[treatment]['L2_period'].tolist())))
+	idx2 = (np.array(second_period) > 0) & (np.array(second_leg_speed) > 1)
+	
+	third_period = list(map(float,alldata[treatment]['R3_period'].tolist()))
+	PR3 = alldata[treatment]['R3_period']
+	third_period.extend(list(map(float,alldata[treatment]['L3_period'].tolist())))
+	idx3 = (np.array(third_period) > 0) & (np.array(third_leg_speed) > 1)
+	
+	loc_legs_period[treatment] = first_period + second_period + third_period
+	
+	first_stance = list(map(float,alldata[treatment]['R1_stance'].tolist()))
+	first_stance.extend(list(map(float,alldata[treatment]['L1_stance'].tolist())))
+	idx1 = (np.array(first_stance) > 0) & (np.array(first_leg_speed) > 2)
+	
+	second_stance = list(map(float,alldata[treatment]['R2_stance'].tolist()))
+	second_stance.extend(list(map(float,alldata[treatment]['L2_stance'].tolist())))
+	idx2 = (np.array(second_stance) > 0) & (np.array(second_leg_speed) > 2)
+	
+	third_stance = list(map(float,alldata[treatment]['R3_stance'].tolist()))
+	third_stance.extend(list(map(float,alldata[treatment]['L3_stance'].tolist())))
+	idx3 = (np.array(third_stance) > 0) & (np.array(third_leg_speed) > 2)
+	
+	loc_legs_stance[treatment] = first_stance + second_stance + third_stance
+	
+	first_swing = list(map(float,alldata[treatment]['R1_swing'].tolist()))
+	first_swing.extend(list(map(float,alldata[treatment]['L1_swing'].tolist())))
+	idx1 = (np.array(first_swing) > 0) & (np.array(first_leg_speed) > 2)
+	
+	second_swing = list(map(float,alldata[treatment]['R2_swing'].tolist()))
+	second_swing.extend(list(map(float,alldata[treatment]['L2_swing'].tolist())))
+	idx2 = (np.array(second_swing) > 0) & (np.array(second_leg_speed) > 2)
+	
+	third_swing = list(map(float,alldata[treatment]['R3_swing'].tolist()))
+	third_swing.extend(list(map(float,alldata[treatment]['L3_swing'].tolist())))
+	idx3 = (np.array(third_swing) > 0) & (np.array(third_leg_speed) > 2)
+	
+	loc_legs_swing[treatment] = first_swing + second_swing + third_swing
+	#alltrt = pd.concat([fly, trtmnt, trial, alldata[treatment]alldata[treatment]['R3_period'], axis = 1)
+	#trial_data = pd.concat([trial_data, alltrt], axis = 0)
+	#print(trial_data)
+	#print(loc_legs_step[treatment])
+	
+#trial_data.columns = ["ID", "treatment", "trial", "amplitude", "period"]
+#print(trial_data)
 
-    third_pullback = list(map(float,alldata[treatment]['R3_pull_back'].tolist()))
-    third_pullback.extend(list(map(float,alldata[treatment]['L3_pull_back'].tolist())))
-    idx3 = (np.array(third_pullback) > 0) & (np.array(third_leg_speed) > 2)
-    
-    loc_legs_pullback[treatment] = first_pullback + second_pullback + third_pullback
 
-    first_step = list(map(float,alldata[treatment]['R1_step_length'].tolist()))
-    first_step.extend(list(map(float,alldata[treatment]['L1_step_length'].tolist())))
-    idx1 = (np.array(first_step) > 0)
+finaldata = pd.DataFrame
 
-    second_step = list(map(float,alldata[treatment]['R2_step_length'].tolist()))
-    second_step.extend(list(map(float,alldata[treatment]['L2_step_length'].tolist())))
-    idx2 = (np.array(second_step) > 0)
-
-    third_step = list(map(float,alldata[treatment]['R3_step_length'].tolist()))
-    third_step.extend(list(map(float,alldata[treatment]['L3_step_length'].tolist())))
-    idx3 = (np.array(third_step) > 0)
-
-    loc_legs_step[treatment] = first_step + second_step + third_step
-
-    first_period = list(map(float,alldata[treatment]['R1_period'].tolist()))
-    first_period.extend(list(map(float,alldata[treatment]['L1_period'].tolist())))
-    idx1 = (np.array(first_period) > 0) & (np.array(first_leg_speed) > 1)
-    
-    second_period = list(map(float,alldata[treatment]['R2_period'].tolist()))
-    second_period.extend(list(map(float,alldata[treatment]['L2_period'].tolist())))
-    idx2 = (np.array(second_period) > 0) & (np.array(second_leg_speed) > 1)
-    
-    third_period = list(map(float,alldata[treatment]['R3_period'].tolist()))
-    third_period.extend(list(map(float,alldata[treatment]['L3_period'].tolist())))
-    idx3 = (np.array(third_period) > 0) & (np.array(third_leg_speed) > 1)
-    
-    loc_legs_period[treatment] = first_period + second_period + third_period
-
-    first_stance = list(map(float,alldata[treatment]['R1_stance'].tolist()))
-    first_stance.extend(list(map(float,alldata[treatment]['L1_stance'].tolist())))
-    idx1 = (np.array(first_stance) > 0) & (np.array(first_leg_speed) > 2)
-
-    second_stance = list(map(float,alldata[treatment]['R2_stance'].tolist()))
-    second_stance.extend(list(map(float,alldata[treatment]['L2_stance'].tolist())))
-    idx2 = (np.array(second_stance) > 0) & (np.array(second_leg_speed) > 2)
-    
-    third_stance = list(map(float,alldata[treatment]['R3_stance'].tolist()))
-    third_stance.extend(list(map(float,alldata[treatment]['L3_stance'].tolist())))
-    idx3 = (np.array(third_stance) > 0) & (np.array(third_leg_speed) > 2)
-
-    loc_legs_stance[treatment] = first_stance + second_stance + third_stance
-    
-    
-    first_swing = list(map(float,alldata[treatment]['R1_swing'].tolist()))
-    first_swing.extend(list(map(float,alldata[treatment]['L1_swing'].tolist())))
-    idx1 = (np.array(first_swing) > 0) & (np.array(first_leg_speed) > 2)
-
-    second_swing = list(map(float,alldata[treatment]['R2_swing'].tolist()))
-    second_swing.extend(list(map(float,alldata[treatment]['L2_swing'].tolist())))
-    idx2 = (np.array(second_swing) > 0) & (np.array(second_leg_speed) > 2)
-
-    third_swing = list(map(float,alldata[treatment]['R3_swing'].tolist()))
-    third_swing.extend(list(map(float,alldata[treatment]['L3_swing'].tolist())))
-    idx3 = (np.array(third_swing) > 0) & (np.array(third_leg_speed) > 2)
-    
-    loc_legs_swing[treatment] = first_swing + second_swing + third_swing
+for treatment in treatments:
+	finaldata = pd.concat(alldata)
+	
+finaldata = finaldata.drop(finaldata.columns[[0]], axis=1)
+	
+finaldata.to_csv('/home/eebrandt/projects/UChicago/fly_walking/sandpaper/data/combined.csv', index=False) 
+	
 
 fig, axes = plt.subplots(2,1)
 colors = ['orange','blue','green','red','yellow']
@@ -139,8 +183,11 @@ axes[0].set_yticks([])
 axes[0].set_xlabel('Step Amplitude (mm)',fontname='Georgia', fontsize=13)
 
 for treatment in treatments:
+    #print(loc_legs_step[treatment])
     t_stat, p_val = stats.ttest_ind(loc_legs_step[treatment], loc_legs_step['glass'], nan_policy='omit')
-    print(np.nanmean(loc_legs_step[treatment]), np.nanstd(loc_legs_step[treatment]), t_stat, p_val, treatment)
+    #print(np.nanmean(loc_legs_step[treatment]), np.nanstd(loc_legs_step[treatment]), t_stat, p_val, treatment)
+    #print(loc_legs_step[treatment])
+    
 
 df = []
 for treatment in treatments:
@@ -155,7 +202,7 @@ axes[1].set_xlabel('Period (s)',fontname='Georgia', fontsize=13)
 
 for treatment in treatments:
     t_stat, p_val = stats.ttest_ind(loc_legs_period[treatment], loc_legs_period['glass'], nan_policy='omit')
-    print(np.nanmean(loc_legs_period[treatment]), np.nanstd(loc_legs_period[treatment]), t_stat, p_val, treatment)
+    #print(np.nanmean(loc_legs_period[treatment]), np.nanstd(loc_legs_period[treatment]), t_stat, p_val, treatment)
 #
 #df = []
 #for treatment in treatments:
@@ -180,7 +227,7 @@ for treatment in treatments:
 #axes[1][1].set_xlabel('Stance (s)',fontname='Georgia', fontsize=13)
 
 plt.tight_layout()
-plt.savefig(upperdir + '/Figures/' + 'compare_kinematics_by_treatment.pdf')
+plt.savefig('/home/eebrandt/projects/UChicago/fly_walking/sandpaper/analysis/' + 'compare_kinematics_by_treatment.pdf')
 
 #
 

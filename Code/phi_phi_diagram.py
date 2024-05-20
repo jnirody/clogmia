@@ -1,9 +1,10 @@
+#!/usr/bin/python3
 ## This code plots ipsilateral vs contralateral phase difference for each leg.
 
 ## The plots made from this code appear in: Figure 4d, Figure 5b, Figure S6a
 
 ###########################################################################
-#!/usr/bin/python
+
 import re, math, sys, os, random
 import numpy as np
 from matplotlib import collections  as mc
@@ -33,10 +34,11 @@ def gauss(x,mu,sigma,A,c):
 condition = 'sandpaper'
 
 upperdir = '/'.join(os.getcwd().split('/')[:-1])
-datadir = upperdir + '/Data/ForAnalysis/' + condition + '/Individual/ByStride/'
+upperdir = '/home/eebrandt/projects/UChicago/fly_walking/sandpaper'
+datadir = upperdir + '/data/processed_data/Individual/ByStride/'
 files = glob.glob(datadir + '*.csv')
-byframe_dir = upperdir + '/Data/ForAnalysis/' + condition + '/Individual/ByFrame/'
-avg_file = upperdir + '/Data/ForAnalysis/' + condition + '/fly_averages.csv'
+byframe_dir = upperdir + '/data/processed_data/Individual/ByFrame/'
+avg_file = upperdir + '/data/processed_data/fly_averages.csv'
 avgdata = pd.read_csv(avg_file)
 sorted_files = {}
 
@@ -159,6 +161,7 @@ for treatment in sorted_files:
                         just_contra.extend([contra_phase])
                         contra_phases[int(leg/2)].extend([(stride_speed,contra_phase)])
                     phases.extend([(contra_phase,ipsi_phase)])
+   
 
     legs = ['R3','L3','R2','L2','R1','L1']
 
@@ -186,7 +189,7 @@ for treatment in sorted_files:
     m = cm.ScalarMappable(cmap=cmap, norm=norm)
     #fig.colorbar(m, ax=ax.flat)
     plt.tight_layout()
-    plt.savefig(upperdir + '/Figures/' + condition + '_' + treatment + '_ipsiphases_vs_speed.pdf')
+    #plt.savefig(upperdir + '/analysis/python_raw/' + treatment + '_ipsiphases_vs_speed.pdf')
 
     f = 0
     for j in range(len(contra_phases)):
@@ -199,7 +202,7 @@ for treatment in sorted_files:
     for j in range(len(contra_phases)):
         leg1 = legs[j*2]
         leg2 = legs[(j*2)+1]
-        print(contra_phases[j])
+        #print(contra_phases[j])
         x,y = np.array(contra_phases[j]).T
         nbins = 50
         k = kde.gaussian_kde(np.array(contra_phases[j]).T)
@@ -218,8 +221,10 @@ for treatment in sorted_files:
     norm = mpl.colors.Normalize(vmin=0, vmax=0.025)
     cmap = cm.get_cmap('Blues', nbins)
     m = cm.ScalarMappable(cmap=cmap, norm=norm)
-    fig.colorbar(m, ax=ax.flat, orientation='horizontal', aspect=40)
-    plt.savefig(upperdir + '/Figures/' + condition + '_' + treatment + '_contraphases_vs_speed.pdf')
+    #fig.colorbar(m, ax=ax.flat, orientation='horizontal', aspect=40)
+    #plt.savefig(upperdir + '/analysis/python_raw/' + treatment + '_contraphases_vs_speed.pdf')
+    
+
 
     fig, ax = plt.subplots()
     x,y = np.array(phases).T
@@ -227,13 +232,18 @@ for treatment in sorted_files:
     k = kde.gaussian_kde(np.array(phases).T)
     xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]
     zi = k(np.vstack([xi.flatten(), yi.flatten()]))
-    phis = plt.contourf(xi, yi, zi.reshape(xi.shape),cmap='viridis')
+    phis = plt.contourf(xi, yi, zi.reshape(xi.shape),np.arange(0, 4.5, .5), extend = 'both', fontname = 'Georgia')
+    plt.ylim(0, 1.08)
+    plt.xlim(0,1)
+    #phis = plt.contourf(xi, yi, zi.reshape(xi.shape),cmap='viridis')
     fig.colorbar(phis, ax=ax)
  #   plt.plot(0.33,0.33,'*',markersize=15, color='white')
  #   plt.plot(0.66,0.33,'*',markersize=15, color='white')
-    plt.xlabel(r'$\phi_C$ (normalized phase)', fontsize=15)
-    plt.ylabel(r'$\phi_I$ (normalized phase)', fontsize=15)
-    plt.savefig(upperdir + '/Figures/' + condition + '_' + treatment + '_phiVphi_nodots.pdf')
+    plt.xlabel(r'$\phi_C$ (normalized phase)', fontsize=17, fontname='Georgia')
+    plt.ylabel(r'$\phi_I$ (normalized phase)', fontsize=17, fontname='Georgia')
+    #print(treatment)
+    #print(len(x))
+    #plt.savefig(upperdir + '/analysis/python_raw/' + treatment + '_phiVphi_nodots.pdf')
 
 
     fig, ax = plt.subplots()
@@ -242,11 +252,20 @@ for treatment in sorted_files:
     k = kde.gaussian_kde(np.array(phases).T)
     xi, yi = np.mgrid[x.min():x.max():nbins*1j, y.min():y.max():nbins*1j]
     zi = k(np.vstack([xi.flatten(), yi.flatten()]))
-    phis = plt.contourf(xi, yi, zi.reshape(xi.shape),cmap='viridis')
-    cbar = plt.colorbar(phis)
+    #phis = plt.contourf(xi, yi, zi.reshape(xi.shape),cmap='viridis')
+    phis = plt.contourf(xi, yi, zi.reshape(xi.shape),np.arange(0, 4.5, .5), extend = 'both', fontname = 'Georgia')
+    fig.colorbar(phis, ax=ax)
+    #cbar = plt.colorbar(phis)
   # plt.plot(0.33,0.33,'*',markersize=15,color='white')
     plt.plot(0.5,0.5,'*',markersize=15,color='red')
    # plt.plot(0.5,0.33,'*',markersize=15,color='white')
-    plt.xlabel(r'$\phi_C$ (normalized phase)', fontsize=15)
-    plt.ylabel(r'$\phi_I$ (normalized phase)', fontsize=15)
-    plt.savefig(upperdir + '/Figures/' + condition + '_' + treatment + '_phiVphi.pdf')
+    plt.xlabel(r'$\phi_C$ (normalized phase)', fontsize=17, fontname='Georgia')
+    plt.ylabel(r'$\phi_I$ (normalized phase)', fontsize=17, fontname='Georgia')
+    plt.ylim(0, 1.08)
+    plt.xlim(0,1)
+    #plt.savefig(upperdir + '/analysis/python_raw/' + treatment + '_phiVphi.pdf')
+    
+    #fig, ax = plt.subplots(1,1)
+    #plt.scatter(x, y, color = "grey", s = 5)
+    #plt.show()
+    #plt.savefig(upperdir + '/analysis/python_raw' + treatment + '_phiphi+scatter.pdf')

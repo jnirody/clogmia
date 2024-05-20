@@ -1,8 +1,8 @@
+#!/usr/bin/python3
 ###########################################################################
 # Makes averaged gait diagram.
 # This makes Fig1c, Fig S3
 ###########################################################################
-#!/usr/bin/python
 import re, math, sys, os, random
 import numpy as np
 import pylab as pl
@@ -31,7 +31,8 @@ def von_mises_distribution(x, mu, kappa):
 condition = 'sandpaper'
 
 upperdir = '/'.join(os.getcwd().split('/')[:-1])
-datadir = upperdir + '/Data/ForAnalysis/' + condition + '/Individual/ByStride/'
+upperdir = '/home/eebrandt/projects/UChicago/fly_walking/sandpaper'
+datadir = upperdir + '/data/processed_data/Individual/ByStride/'
 files = glob.glob(datadir + '*.csv')
 sorted_files = {}
 
@@ -41,7 +42,7 @@ for file in files:
         sorted_files[treatment].append(file)
     else:
         sorted_files[treatment] = [file]
-avg_file = upperdir + '/Data/ForAnalysis/' + condition + '/fly_averages.csv'
+avg_file = upperdir + '/data/processed_data/fly_averages.csv'
 avgdata = pd.read_csv(avg_file)
 
 for treatment in sorted_files:
@@ -78,6 +79,7 @@ for treatment in sorted_files:
             interval_start = []
             interval_end = []
             swing_starts[0] = data['L1_swing_start'][data['L1_swing_start'] > 0].to_list()
+            print(swing_starts[0])
             stance_starts[0] = data['L1_stance_start'][data['L1_stance_start'] > 0].to_list()
             # get out all the stance and swing start times to compute out relatives
             swing_starts[3] = data['R1_swing_start'][data['R1_swing_start'] > 0].to_list()
@@ -168,4 +170,6 @@ for treatment in sorted_files:
     plt.xticks(fontname='Georgia',fontsize=18)
     ax.set_xlabel('Gait cycle',fontname='Georgia', fontsize=24)
     plt.tight_layout()
-    plt.savefig(upperdir+'/Figures/avggaitdiagram_' + condition + '_' + treatment + '.pdf')
+    plt.savefig(upperdir+'/analysis/python_raw/avggaitdiagram_' + treatment + '.pdf')
+    
+

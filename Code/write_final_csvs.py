@@ -1,6 +1,7 @@
+#!/usr/bin/python3
+
 # writes out csvs for analysis
 ###########################################################################
-#!/usr/bin/python
 import re, math, sys, os, random
 import numpy as np
 import pylab as pl
@@ -10,22 +11,43 @@ from optparse import OptionParser
 import matplotlib.pyplot as plt
 import glob, csv
 from scipy.stats import mode
+import requests
 ###########################################################################
 def grouper(iterable,n):
     args = [iter(iterable)]*n
     return zip(*args)
 ###########################################################################
+#this function downloads a google sheet based on a given spreadsheet ID and sheet ID
+def getGoogleSheet(spreadsheetID, sheetID, outDir, outFile):
+  url = f'https://docs.google.com/spreadsheets/d/'+ spreadsheetID +'/gviz/tq?tqx=out:csv&gid='+ sheetID
+  response = requests.get(url)
+  if response.status_code == 200:
+    print("downloading")
+    filepath = os.path.join(outDir, outFile)
+    with open(filepath, 'wb') as f:
+      f.write(response.content)
+      print('CSV file saved to: {}'.format(filepath))    
+  else:
+    print(f'Error downloading Google Sheet: {response.status_code}')
+    sys.exit(1)
+###########################################################################
 condition = 'sandpaper'
+spreadsheetID = '14np4s690fw7UYScYxyxFJoBc7tl1E7RwvqevCYGaSlI'   
+sheetID = '519744848'
 
 currdir = os.getcwd()
 upperdir = '/'.join(currdir.split('/')[:-1])
-directory = upperdir + '/Data/Tracking/' + condition + '/'
+upperdir = '/home/eebrandt/projects/UChicago/fly_walking/sandpaper/'
+directory = upperdir + 'data/tracking/'
+print(directory)
 
 if condition == 'ablatement':
     treatments = [f for f in os.listdir(directory) if not f.startswith('.')]
 if condition == 'sandpaper':
     treatments = ['sp']
     flies = [f for f in os.listdir(directory) if not f.startswith('.')]
+    
+filepath = getGoogleSheet(spreadsheetID, sheetID, directory, 'video_timecodes.csv')    
 metadata = pd.read_csv(directory + 'metadata.csv')
 
 framerate = 240. # frames/sec
@@ -143,7 +165,7 @@ for tr in treatments:
                 temp_style = [y + z for y,z in zip(flydata[fly][treatment][video][timestamp][k]['leg_down'],temp_style)]
             flydata[fly][treatment][video][timestamp][8]['num_feet_down'] = temp_style
             for treatment in flydata[fly]:
-                with open(upperdir + '/Data/ForAnalysis/' + condition + '/Individual/ByFrame/' + fly + '_' + treatment + '_framebyframe.csv','w') as outfile:
+                with open(upperdir + '/data/processed_data/Individual/ByFrame/' + fly + '_' + treatment + '_framebyframe.csv','w') as outfile:
                     fly_writer = csv.writer(outfile, delimiter=',')
                     fly_writer.writerow(['fly','treatment','trial','iteration','body_length','limb_length','frame', 'L1_leg_down', 'L1_leg_loc','R1_leg_down','R1_leg_loc','L2_leg_down','L2_leg_loc', 'R2_leg_down','R2_leg_loc','L3_leg_down', 'L3_leg_loc','R3_leg_down','R3_leg_loc','head_pos', 'center_pos','COM_dist','COM_speed','num_feet_down','tail_pos'])
                     for video in flydata[fly][treatment]:
@@ -210,7 +232,7 @@ for tr in treatments:
                                     strides.append([flydata[fly][treatment][video][timestamp][leg]['liftoff_time'][-1],'', '','','','','','','','','', flydata[fly][treatment][video][timestamp][leg]['liftoff_loc'][-1]])
                                     flydata[fly][treatment][video][timestamp][leg]['strides'] = strides
                             # write individual stride-by-stride csvs to analyse
-                with open(upperdir + '/Data/ForAnalysis/' + condition + '/Individual/ByStride/' + fly + '_' + treatment + '_stridebystride.csv','w') as outfile:
+                with open(upperdir + '/data/processed_data/Individual/ByStride/' + fly + '_' + treatment + '_stridebystride.csv','w') as outfile:
                     fly_writer = csv.writer(outfile, delimiter=',')
                     fly_writer.writerow(['fly','treatment', 'trial', 'iteration', 'body_length','limb_length','L1_swing_start','L1_stance_start','L1_swing','L1_stance', 'L1_period','L1_duty_factor','L1_step_length','L1_pull_back','L1_stride_length','L1_stride_speed','L1_AEP','L1_PEP', 'R1_swing_start','R1_stance_start','R1_swing','R1_stance','R1_period', 'R1_duty_factor','R1_step_length','R1_pull_back', 'R1_stride_length','R1_stride_speed', 'R1_AEP','R1_PEP', 'L2_swing_start','L2_stance_start','L2_swing','L2_stance','L2_period','L2_duty_factor', 'L2_step_length','L2_pull_back','L2_stride_length','L2_stride_speed','L2_AEP','L2_PEP', 'R2_swing_start','R2_stance_start','R2_swing','R2_stance', 'R2_period','R2_duty_factor','R2_step_length','R2_pull_back','R2_stride_length','R2_stride_speed','R2_AEP','R2_PEP', 'L3_swing_start','L3_stance_start','L3_swing','L3_stance', 'L3_period','L3_duty_factor','L3_step_length','L3_pull_back','L3_stride_length','L3_stride_speed','L3_AEP','L3_PEP', 'R3_swing_start','R3_stance_start','R3_swing','R3_stance','R3_period', 'R3_duty_factor','R3_step_length','R3_pull_back','R3_stride_length','R3_stride_speed','R3_AEP','R3_PEP'])
                     for video in flydata[fly][treatment]:
@@ -286,13 +308,13 @@ for fly in flydata:
         fly_average_rows[-1].extend([np.mean(cum_swing),np.std(cum_swing), np.mean(cum_stance),np.std(cum_stance), np.mean(cum_period),np.std(cum_period),np.mean(cum_duty_factor), np.std(cum_duty_factor),np.mean(cum_step_length), np.std(cum_step_length),np.mean(cum_pull_back),np.std(cum_pull_back),np.mean(cum_stride_length), np.std(cum_stride_length)])
         fly_average_rows[-1].extend([np.mean(speed),np.std(speed),' '])
 
-with open(upperdir + '/Data/ForAnalysis/' + condition + '/fly_averages.csv', 'w') as outfile:
+with open(upperdir + '/data/processed_data/fly_averages.csv', 'w') as outfile:
     fly_writer = csv.writer(outfile, delimiter=',')
     fly_writer.writerow(['fly','treatment','body_length','body_length_sd','limb_length','limb_length_sd','L1_swing','L1_swing_sd','L1_stance','L1_stance_sd','L1_period','L1_period_sd','L1_duty_factor','L1_duty_factor_sd', 'L1_step_length','L1_step_length_sd','L1_pull_back','L1_pull_back_sd','L1_stride_length','L1_stride_length_sd','R1_swing','R1_swing_sd','R1_stance','R1_stance_sd','R1_period','R1_period_sd','R1_duty_factor','R1_duty_factor_sd', 'R1_step_length','R1_step_length_sd','R1_pull_back','R1_pull_back_sd','R1_stride_length','R1_stride_length_sd','L2_swing', 'L2_swing_sd','L2_stance','L2_stance_sd','L2_period','L2_period_sd','L2_duty_factor','L2_duty_factor_sd', 'L2_step_length','L2_step_length_sd','L2_pull_back','L2_pull_back_sd','L2_stride_length','L2_stride_length_sd','R2_swing', 'R2_swing_sd','R2_stance','R2_stance_sd','R2_period','R2_period_sd','R2_duty_factor','R2_duty_factor_sd', 'R2_step_length','R2_step_length_sd','R2_pull_back','R2_pull_back_sd','R2_stride_length','R2_stride_length_sd','L3_swing', 'L3_swing_sd','L3_stance','L3_stance_sd','L3_period','L3_period_sd','L3_duty_factor','L3_duty_factor_sd', 'L3_step_length','L3_step_length_sd','L3_pull_back','L3_pull_back_sd','L3_stride_length','L3_stride_length_sd','R3_swing', 'R3_swing_sd','R3_stance','R3_stance_sd','R3_period','R3_period_sd','R3_duty_factor','R3_duty_factor_sd', 'R3_step_length','R3_step_length_sd','R3_pull_back','R3_pull_back_sd','R3_stride_length','R3_stride_length_sd','cum_swing','cum_swing_sd','cum_stance','cum_stance_sd', 'cum_period','cum_period_sd', 'cum_duty_factor','cum_duty_factor_sd', 'cum_step_length','cum_step_length_sd', 'cum_pull_back','cum_pull_back_sd','cum_stride_length','cum_stride_length_sd', 'speed','speed_sd','Froude_number'])
     for j in range(len(fly_average_rows)):
         fly_writer.writerow(fly_average_rows[j])
 
-concatdir = upperdir + '/Data/ForAnalysis/' + condition + '/Individual/ByStride/'
+concatdir = upperdir + '/data/processed_data/Individual/ByStride/'
 filenames = glob.glob(concatdir + "/*.csv")
 sorted_files = {}
 big_df = {}
@@ -312,5 +334,5 @@ for treatment in sorted_files:
         
 for treatment in big_df:
     frame = pd.concat(big_df[treatment], axis=0, ignore_index=True)
-    frame.to_csv(upperdir + '/Data/ForAnalysis/' + condition  + '/compiled_flies_by_strides_' + treatment + '.csv')
+    frame.to_csv(upperdir + 'data/processed_data/' + 'compiled_flies_by_strides_' + treatment + '.csv')
 

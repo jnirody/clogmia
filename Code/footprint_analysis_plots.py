@@ -1,5 +1,5 @@
+#!/usr/bin/python3
 ###########################################################################
-#!/usr/bin/python
 import re, math, sys, os, random
 import numpy as np
 import pylab as pl
@@ -37,11 +37,12 @@ def mysine(x, a1, a2, a3):
 condition = 'sandpaper'
 
 upperdir = '/'.join(os.getcwd().split('/')[:-1])
-directory = upperdir + '/Data/Tracking/' + condition + '/'
-datadir = upperdir + '/Data/ForAnalysis/' + condition + '/Individual/ByStride/'
+upperdir = '/home/eebrandt/projects/UChicago/fly_walking/sandpaper'
+directory = upperdir + '/data/processed_data/'
+datadir = upperdir + '/data/processed_data/Individual/ByStride/'
 files = glob.glob(datadir + '*.csv')
-byframe_dir = upperdir + '/Data/ForAnalysis/' + condition + '/Individual/ByFrame/'
-avg_file = upperdir + '/Data/ForAnalysis/' + condition + '/fly_averages.csv'
+byframe_dir = upperdir + '/data/processed_data/Individual/ByFrame/'
+avg_file = upperdir + '/data/processed_data/fly_averages.csv'
 avgdata = pd.read_csv(avg_file)
 sorted_files = {}
 metadata = pd.read_csv(directory + 'metadata.csv')
@@ -49,6 +50,8 @@ metadata = pd.read_csv(directory + 'metadata.csv')
 
 framerate = 240. # frames/sec
 df = {}
+IDdata = {}
+
 treatments = ['glass','g150','g100','g60','g24']
 
 for file in files:
@@ -61,7 +64,10 @@ for file in files:
 for treatment in sorted_files:
     print(treatment)
     df[treatment] = []
+    IDdata[treatment] = []
+    #meta[treatment] = []
     rel_avgdata = avgdata[avgdata['treatment']==treatment]
+    #print(pd.DataFrame.from_dict(avgdata).iloc[0])
     rel_swing_lengths = [[] for i in range(6)]
     rel_stance_lengths = [[] for i in range(6)]
 
@@ -91,11 +97,16 @@ for treatment in sorted_files:
 
     
     for file in sorted_files[treatment]:
+        #print(file)
         fly = file.split('/')[-1].split('_')[0]
         dataframe = pd.read_csv(file)
+        #this will be the second column on the output dataframe - it associates each each observation with the specific trial
+        dataframe["total_ID"] = dataframe["fly"] + "_" + dataframe["treatment"] + "_" + dataframe["iteration"].astype(str) + "_" + dataframe["trial"]
+       
         
         grouped = dataframe.groupby('trial')
         for video,data in grouped:
+            #print(video)
             curr_hl_footprint = []
             curr_ml_footprint = []
         
@@ -150,19 +161,36 @@ for treatment in sorted_files:
                     avg_ml_footprint.append(np.mean(curr_hl_footprint))
                 if len(curr_ml_footprint) > 0:
                     avg_ml_footprint.append(np.mean(curr_ml_footprint))
+     
+            totalID = data["total_ID"].tolist()
 
-    df[treatment].extend(avg_ml_footprint)
+            idlist = [totalID[1]] * len(avg_ml_footprint)
+            IDdata[treatment].extend(idlist)
+            df[treatment].extend(avg_ml_footprint)
+                
+    #print(len(avg_ml_footprint))
+    #df[treatment].extend(avg_ml_footprint)
             #ax = sns.violinplot(data=df,palette=colors,inner=None)
             #for violin,alpha in zip(ax.collections[::1], [0.5,0.5,0.5,0.5]):
                 #violin.set_alpha(alpha)'
+                
+leaderdata = pd.DataFrame()
+for treatment in treatments:
+	test = pd.concat([pd.DataFrame.from_dict(IDdata[treatment]), pd.DataFrame.from_dict(df[treatment])], axis = 1)
+	leaderdata = pd.concat([leaderdata, test])
+leaderdata.columns = ["total_ID", "phidiff"]
+
+             
+leaderdata.to_csv('/home/eebrandt/projects/UChicago/fly_walking/sandpaper/data/leaderdata.csv', index=False) 
 
 dd = []
 for treatment in treatments:
+    #print(len(df[treatment]))
     t_stat, p_val = stats.ttest_ind(df[treatment], df['glass'])
     print(mean(df[treatment]), std(df[treatment]), t_stat, p_val)
     dd.append(df[treatment])
 colors = ['orange','blue','green','red','yellow']
 ax = sns.violinplot(data=dd, palette=colors)
 ax.set_xticklabels(treatments)
-plt.savefig(upperdir+'/Figures/followtheleader.pdf')
+plt.savefig(upperdir+'/analysis/python_raw/followtheleader.pdf')
 
